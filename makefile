@@ -16,8 +16,7 @@ UPLOAD_TOKEN_DIR = ./upload_tokens/
 SRC_FILES = $(wildcard $(SRC_DIR)*.py)
 SRC_UPLOAD_TOKENS = $(patsubst $(SRC_DIR)%.py, $(UPLOAD_TOKEN_DIR)%.py_uploaded, $(SRC_FILES))
 
-$(info $$SRC_FILES is [${SRC_FILES}])
-$(info $$SRC_UPLOAD_TOKENS is [${SRC_UPLOAD_TOKENS}])
+BOARD_FILES = $(subst _uploaded, , $(subst $(UPLOAD_TOKEN_DIR), , $(wildcard $(UPLOAD_TOKEN_DIR)*.py_uploaded)))
 
 blank :=
 define newline
@@ -37,7 +36,7 @@ $(UPLOAD_TOKEN_DIR)%.py_uploaded: $(SRC_DIR)%.py
 	echo Created > $@
 
 clean:
-	-$(AMPY) $(AMPY_ARGS) rmdir .
+	-$(foreach file, $(BOARD_FILES), $(AMPY) $(AMPY_ARGS) rm $(file) $(newline))
 	cd $(UPLOAD_TOKEN_DIR)
 	-del /S /Q *.py_uploaded
 
