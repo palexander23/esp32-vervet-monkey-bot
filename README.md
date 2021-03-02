@@ -36,3 +36,11 @@ https://www.putty.org/
 
 You may need to add the Python/Script directory and the make/bin directory to your PATH variable.
 The locations of these directories will be specific to your installation.
+
+## Setting Up the ESP32
+Before uploading code to the ESP32, the proprietary micropython environment built for this project must be uploaded.
+See the `README.md` in the micropython_port directory.
+
+## Building the software
+Running the following command should upload the python code and open a PuTTY prompt.
+You have to reset the board after the upload is complete.
