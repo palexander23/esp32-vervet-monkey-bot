@@ -23,6 +23,8 @@ async def heartbeat():
 def main():
     from frequency_detection import fft_test
 
+    machine.freq(240000000)
+
     # Set up event loop
     loop = uasyncio.get_event_loop()
 
