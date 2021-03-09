@@ -1,8 +1,21 @@
 
 from main import heartbeat
+from sample_circular_buffer import SampleCircularBuffer
+
+try:
+    from uasyncio import Lock
+except ImportError:
+    from asyncio import Lock 
+
+lock_left_sample_array = Lock()
+left_sample_array = SampleCircularBuffer(5)
+
+lock_right_sample_array = Lock()
+right_sample_array = SampleCircularBuffer(5)
 
 
 ATTINY_I2C_ADDR = const(10)
+
 
 def initialize_sample_retrieval():
     """Setup timer and I2C bus for retrieving samples from the ATTiny"""
@@ -15,7 +28,7 @@ def initialize_sample_retrieval():
     # Timer initialisation
     sample_timer = Timer(0)
     sample_timer.init(
-        period=1, 
+        period=500, 
         mode=Timer.PERIODIC, 
         callback=lambda t:process_new_samples(sample_i2c),
     )
@@ -23,10 +36,25 @@ def initialize_sample_retrieval():
 
 def process_new_samples(sample_i2c):
 
+    global left_sample_array
+    global right_sample_array
+
     try:
         left_ear_sample, right_ear_sample = retrieve_samples(sample_i2c)
-        print(left_ear_sample, right_ear_sample)
-    
+
+        while lock_left_sample_array.locked():
+            pass
+        left_sample_array.add_sample(left_ear_sample)
+
+        print(left_sample_array.get_ordered_array())
+        
+
+        while lock_right_sample_array.locked():
+            pass
+        right_sample_array.add_sample(right_ear_sample)
+
+        print(right_sample_array.get_ordered_array())
+
     # Catch loss of I2C connection
     except OSError as e:
         from machine import Timer
