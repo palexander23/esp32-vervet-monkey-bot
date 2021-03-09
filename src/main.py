@@ -21,16 +21,43 @@ async def heartbeat():
 
 
 def main():
-    from frequency_detection import fft_test
+    from sample_retrieval import initialize_sample_retrieval
 
-    machine.freq(240000000)
+    try:
+        machine.freq(240000000)
 
-    # Set up event loop
-    loop = uasyncio.get_event_loop()
+        # Set up sample retrieval
+        initialize_sample_retrieval()
 
-    loop.create_task(heartbeat())
-    loop.create_task(fft_test())
-    loop.run_forever()
+        # Set up event loop
+        loop = uasyncio.get_event_loop()
+
+        # Load tasks onto event loop
+        loop.create_task(heartbeat())
+
+        # Start Event loop
+        # THIS FUNCTION SHOULD NEVER RETURN
+        loop.run_forever()
+
+    except KeyboardInterrupt:
+        print("")
+        print("Keyboard Interrupt")
+        print("")
+
+    except Exception as e:
+        print("")
+        print(e)
+        print("")
+
+    finally:
+        # Stop the sample timer
+        from machine import Timer
+        sample_timer = Timer(0)
+        sample_timer.deinit()
+        
+        # Stop the event loop if it has been defined
+        if "loop" in locals():
+            loop.stop() 
 
 
 if __name__ == "__main__":
