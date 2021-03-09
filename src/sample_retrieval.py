@@ -1,4 +1,7 @@
 
+from main import heartbeat
+
+
 ATTINY_I2C_ADDR = const(10)
 
 def initialize_sample_retrieval():
@@ -9,22 +12,36 @@ def initialize_sample_retrieval():
     # I2C bus setup 
     sample_i2c = I2C(0, freq=1000000)
 
-    # Check that the ATTiny is present
-    # If it isn't print an error and halt the program
-    if ATTINY_I2C_ADDR not in sample_i2c.scan():
-        raise Exception("ERROR: ATTiny could not be found over I2C!")
-
     # Timer initialisation
     sample_timer = Timer(0)
-    sample_timer.init(period=1, mode=Timer.PERIODIC, callback=lambda t:process_new_samples(sample_i2c))
+    sample_timer.init(
+        period=1, 
+        mode=Timer.PERIODIC, 
+        callback=lambda t:process_new_samples(sample_i2c),
+    )
 
 
-def process_new_samples(sample_i2c_bus):
-    left_ear_sample, right_ear_sample = retrieve_samples(sample_i2c_bus)
+def process_new_samples(sample_i2c):
 
-    print(left_ear_sample, right_ear_sample)
-
+    try:
+        left_ear_sample, right_ear_sample = retrieve_samples(sample_i2c)
+        print(left_ear_sample, right_ear_sample)
     
+    # Catch loss of I2C connection
+    except OSError as e:
+        from machine import Timer
+
+        print("I2C connection to ATTiny Lost")
+
+        # Reinitialize timer to attempt reconnection
+        sample_timer = Timer(0)
+        sample_timer.init(
+            period=500, 
+            mode=Timer.PERIODIC, 
+            callback=lambda t:reconnect_i2c(sample_i2c),
+        )
+
+
 def retrieve_samples(sample_i2c_bus):
     """Read the most recent samples collected from the ATTiny via the I2C bus"""
 
@@ -36,3 +53,35 @@ def retrieve_samples(sample_i2c_bus):
     right_ear_sample = int.from_bytes(sample_bytes[2:4], 'little')
 
     return left_ear_sample, right_ear_sample
+
+
+def reconnect_i2c(sample_i2c):
+    """Called as the sample timer IRQ when the I2C connection has failed.
+    Checks the I2C bus for the ATTiny. Resumes normal operation if it is 
+    found.
+
+    Should be called at a much lower frequency than process_new_samples
+    """
+    
+    from machine import Pin
+
+    # Modify heartbeat LED behaviour to signify problem
+    heartbeat_led = Pin(2)
+    heartbeat_led.on()
+
+    print("Attempting to reconnect to ATTiny...")
+
+    # If the ATTiny is reachable via I2C resume normal sample gathering
+    if ATTINY_I2C_ADDR in sample_i2c.scan():
+
+        from machine import Timer
+
+        # Reinitialize timer with sample gathering IRQ
+        sample_timer = Timer(0)
+        sample_timer.init(
+            period=1, 
+            mode=Timer.PERIODIC, 
+            callback=lambda t:process_new_samples(sample_i2c),
+        )
+
+        
