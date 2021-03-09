@@ -21,13 +21,15 @@ async def heartbeat():
 
 
 def main():
-    from frequency_detection import waveform_generation_test
+    from frequency_detection import fft_test
+
+    machine.freq(240000000)
 
     # Set up event loop
     loop = uasyncio.get_event_loop()
 
     loop.create_task(heartbeat())
-    loop.create_task(waveform_generation_test())
+    loop.create_task(fft_test())
     loop.run_forever()
 
 
