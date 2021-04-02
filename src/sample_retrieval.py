@@ -13,9 +13,12 @@ left_sample_array = SampleCircularBuffer(5)
 lock_right_sample_array = Lock()
 right_sample_array = SampleCircularBuffer(5)
 
-
+# I2C constants
 ATTINY_I2C_ADDR = const(10)
 
+# Sample Retrieval Timer Constants
+NORMAL_OPERATION_PERIOD_MS = 500
+ERROR_STATE_PERIOD_MS = 500
 
 def initialize_sample_retrieval():
     """Setup timer and I2C bus for retrieving samples from the ATTiny"""
@@ -25,13 +28,23 @@ def initialize_sample_retrieval():
     # I2C bus setup 
     sample_i2c = I2C(0, freq=1000000)
 
-    # Timer initialisation
-    sample_timer = Timer(0)
-    sample_timer.init(
-        period=500, 
-        mode=Timer.PERIODIC, 
-        callback=lambda t:process_new_samples(sample_i2c),
-    )
+    # Check whether the ATTiny is available over I2C
+    # Only start the sample retrieval system if it is
+    if ATTINY_I2C_ADDR in sample_i2c.scan():
+        
+        print("ATTiny Found!")
+        from machine import Timer
+
+        # Reinitialize timer with sample gathering IRQ
+        sample_timer = Timer(0)
+        sample_timer.init(
+            period=NORMAL_OPERATION_PERIOD_MS, 
+            mode=Timer.PERIODIC, 
+            callback=lambda t:process_new_samples(sample_i2c),
+        )
+    
+    else:
+        print("ATTiny Not Found!")
 
 
 def process_new_samples(sample_i2c):
@@ -46,7 +59,7 @@ def process_new_samples(sample_i2c):
             pass
         left_sample_array.add_sample(left_ear_sample)
 
-        print(left_sample_array.get_ordered_array())
+        print(left_sample_array.get_ordered_array())  
         
 
         while lock_right_sample_array.locked():
@@ -64,7 +77,7 @@ def process_new_samples(sample_i2c):
         # Reinitialize timer to attempt reconnection
         sample_timer = Timer(0)
         sample_timer.init(
-            period=500, 
+            period=ERROR_STATE_PERIOD_MS, 
             mode=Timer.PERIODIC, 
             callback=lambda t:reconnect_i2c(sample_i2c),
         )
@@ -101,15 +114,18 @@ def reconnect_i2c(sample_i2c):
 
     # If the ATTiny is reachable via I2C resume normal sample gathering
     if ATTINY_I2C_ADDR in sample_i2c.scan():
-
+        
+        print("ATTiny Found!")
         from machine import Timer
 
         # Reinitialize timer with sample gathering IRQ
         sample_timer = Timer(0)
         sample_timer.init(
-            period=1, 
+            period=NORMAL_OPERATION_PERIOD_MS, 
             mode=Timer.PERIODIC, 
             callback=lambda t:process_new_samples(sample_i2c),
         )
-
+    
+    else:
+        print("ATTiny Not Found!")
         

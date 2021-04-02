@@ -27,7 +27,7 @@ def main():
         machine.freq(240000000)
 
         # Set up sample retrieval
-        initialize_sample_retrieval()
+        # initialize_sample_retrieval()
 
         # Set up event loop
         loop = uasyncio.get_event_loop()
