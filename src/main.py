@@ -1,5 +1,7 @@
 import machine, uasyncio
 
+from sample_circular_buffer import SampleCircularBuffer
+
 async def heartbeat():
     """Flash the onboard LED in a heartbeat to show the event loop is running"""
 
@@ -22,18 +24,29 @@ async def heartbeat():
 
 def main():
     from sample_retrieval import initialize_sample_retrieval
+    from motor_control import motor_driver_test
+
+    from frequency_detection import fft_module_test,
+    from frequency_detection import left_fft_complete_event, right_fft_complete_event
+    from frequency_detection import left_fft_outputs, right_fft_outputs
 
     try:
         machine.freq(240000000)
 
         # Set up sample retrieval
-        # initialize_sample_retrieval()
+        initialize_sample_retrieval()
 
         # Set up event loop
         loop = uasyncio.get_event_loop()
 
+        # Start Anti-aliasing filters
+        lpf_clk = machine.Pin(15)
+        lpf_clk_pwm = machine.PWM(lpf_clk, freq=50000, duty=512)
+
         # Load tasks onto event loop
         loop.create_task(heartbeat())
+        loop.create_task(motor_driver_test())
+        loop.create_task(fft_module_test(left_fft_complete_event, left_fft_outputs))
 
         # Start Event loop
         # THIS FUNCTION SHOULD NEVER RETURN

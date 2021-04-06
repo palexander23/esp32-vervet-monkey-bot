@@ -1,23 +1,17 @@
 
-from main import heartbeat
 from sample_circular_buffer import SampleCircularBuffer
+from test_samples import test_samples
 
-try:
-    from uasyncio import Lock
-except ImportError:
-    from asyncio import Lock 
+from frequency_detection import left_fft_module, right_fft_module
+from frequency_detection import left_sample_array, right_sample_array
 
-lock_left_sample_array = Lock()
-left_sample_array = SampleCircularBuffer(5)
-
-lock_right_sample_array = Lock()
-right_sample_array = SampleCircularBuffer(5)
+import fft_data
 
 # I2C constants
 ATTINY_I2C_ADDR = const(10)
 
 # Sample Retrieval Timer Constants
-NORMAL_OPERATION_PERIOD_MS = 500
+NORMAL_OPERATION_PERIOD_MS = 10
 ERROR_STATE_PERIOD_MS = 500
 
 def initialize_sample_retrieval():
@@ -30,7 +24,8 @@ def initialize_sample_retrieval():
 
     # Check whether the ATTiny is available over I2C
     # Only start the sample retrieval system if it is
-    if ATTINY_I2C_ADDR in sample_i2c.scan():
+    #if ATTINY_I2C_ADDR in sample_i2c.scan():
+    if True:
         
         print("ATTiny Found!")
         from machine import Timer
@@ -47,40 +42,70 @@ def initialize_sample_retrieval():
         print("ATTiny Not Found!")
 
 
+test_samp_idx = 0
+
+def add_test_samples():
+    global test_samp_idx
+
+    new_sample = test_samples[test_samp_idx]
+
+    left_sample_array.add_sample(new_sample)
+    right_sample_array.add_sample(new_sample)
+
+    test_samp_idx = test_samp_idx + 1
+
+    if test_samp_idx > len(test_samples):
+        test_samp_idx = 0
+
+# Incremented every sample. 
+# When it reaches 15, the FFTs are engaged and it reset
+sample_count = 0
+
 def process_new_samples(sample_i2c):
 
     global left_sample_array
     global right_sample_array
 
-    try:
-        left_ear_sample, right_ear_sample = retrieve_samples(sample_i2c)
+    add_test_samples()
 
-        while lock_left_sample_array.locked():
-            pass
-        left_sample_array.add_sample(left_ear_sample)
+    # try:
+    #     left_ear_sample, right_ear_sample = retrieve_samples(sample_i2c)
 
-        print(left_sample_array.get_ordered_array())  
+    #     while lock_left_sample_array.locked():
+    #         pass
+    #     left_sample_array.add_sample(left_ear_sample)
+
+    #     print(left_sample_array.get_ordered_array())  
         
 
-        while lock_right_sample_array.locked():
-            pass
-        right_sample_array.add_sample(right_ear_sample)
+    #     while lock_right_sample_array.locked():
+    #         pass
+    #     right_sample_array.add_sample(right_ear_sample)
 
-        print(right_sample_array.get_ordered_array())
+    #     print(right_sample_array.get_ordered_array())
 
-    # Catch loss of I2C connection
-    except OSError as e:
-        from machine import Timer
+    # # Catch loss of I2C connection
+    # except OSError as e:
+    #     from machine import Timer
 
-        print("I2C connection to ATTiny Lost")
+    #     print("I2C connection to ATTiny Lost")
 
-        # Reinitialize timer to attempt reconnection
-        sample_timer = Timer(0)
-        sample_timer.init(
-            period=ERROR_STATE_PERIOD_MS, 
-            mode=Timer.PERIODIC, 
-            callback=lambda t:reconnect_i2c(sample_i2c),
-        )
+    #     # Reinitialize timer to attempt reconnection
+    #     sample_timer = Timer(0)
+    #     sample_timer.init(
+    #         period=ERROR_STATE_PERIOD_MS, 
+    #         mode=Timer.PERIODIC, 
+    #         callback=lambda t:reconnect_i2c(sample_i2c),
+    #     )
+    global sample_count
+    sample_count = sample_count + 1
+
+    if sample_count > 14:
+        sample_count = 0
+        
+        left_fft_module.calculate_fft()
+        right_fft_module.calculate_fft()
+
 
 
 def retrieve_samples(sample_i2c_bus):
