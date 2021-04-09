@@ -1,6 +1,5 @@
 import machine, uasyncio
 
-from sample_circular_buffer import SampleCircularBuffer
 
 async def heartbeat():
     """Flash the onboard LED in a heartbeat to show the event loop is running"""
@@ -29,12 +28,14 @@ def main():
     from frequency_detection import fft_module_test,
     from frequency_detection import left_fft_complete_event, right_fft_complete_event
     from frequency_detection import left_fft_outputs, right_fft_outputs
+    from frequency_detection import fft_task, fft_trigger_event
 
     try:
         machine.freq(240000000)
 
         # Set up sample retrieval
         initialize_sample_retrieval()
+        print("I2C initialised")
 
         # Set up event loop
         loop = uasyncio.get_event_loop()
@@ -46,6 +47,7 @@ def main():
         # Load tasks onto event loop
         loop.create_task(heartbeat())
         loop.create_task(motor_driver_test())
+        loop.create_task(fft_task(fft_trigger_event))
         loop.create_task(fft_module_test(left_fft_complete_event, left_fft_outputs))
 
         # Start Event loop

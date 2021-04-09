@@ -4,6 +4,8 @@ from test_samples import test_samples
 
 from frequency_detection import left_fft_module, right_fft_module
 from frequency_detection import left_sample_array, right_sample_array
+from frequency_detection import fft_trigger_event
+from frequency_detection import lock_left_sample_array, lock_right_sample_array
 
 import fft_data
 
@@ -11,21 +13,22 @@ import fft_data
 ATTINY_I2C_ADDR = const(10)
 
 # Sample Retrieval Timer Constants
-NORMAL_OPERATION_PERIOD_MS = 10
+NORMAL_OPERATION_PERIOD_MS = 1
 ERROR_STATE_PERIOD_MS = 500
 
 def initialize_sample_retrieval():
     """Setup timer and I2C bus for retrieving samples from the ATTiny"""
     
-    from machine import Timer, I2C
+    from machine import Timer, SoftI2C, Pin
 
     # I2C bus setup 
-    sample_i2c = I2C(0, freq=1000000)
+    sample_i2c = SoftI2C(sda=Pin(19), scl=Pin(18), freq=1000000)
 
     # Check whether the ATTiny is available over I2C
     # Only start the sample retrieval system if it is
-    #if ATTINY_I2C_ADDR in sample_i2c.scan():
-    if True:
+    available_i2c_addresses = sample_i2c.scan()
+    if ATTINY_I2C_ADDR in available_i2c_addresses:
+    # if True:
         
         print("ATTiny Found!")
         from machine import Timer
@@ -40,13 +43,23 @@ def initialize_sample_retrieval():
     
     else:
         print("ATTiny Not Found!")
+        print("Available addresses: {}".format(available_i2c_addresses))
+        from machine import Timer
+
+        # Reinitialize timer to attempt reconnection
+        sample_timer = Timer(0)
+        sample_timer.init(
+            period=ERROR_STATE_PERIOD_MS, 
+            mode=Timer.PERIODIC,
+            callback=lambda t:reconnect_i2c(sample_i2c),
+        )
 
 
 test_samp_idx = 0
 
 def add_test_samples():
     global test_samp_idx
-
+    
     new_sample = test_samples[test_samp_idx]
 
     left_sample_array.add_sample(new_sample)
@@ -54,8 +67,9 @@ def add_test_samples():
 
     test_samp_idx = test_samp_idx + 1
 
-    if test_samp_idx > len(test_samples):
+    if test_samp_idx > len(test_samples) - 1:
         test_samp_idx = 0
+        
 
 # Incremented every sample. 
 # When it reaches 15, the FFTs are engaged and it reset
@@ -66,45 +80,45 @@ def process_new_samples(sample_i2c):
     global left_sample_array
     global right_sample_array
 
-    add_test_samples()
+    # add_test_samples()
 
-    # try:
-    #     left_ear_sample, right_ear_sample = retrieve_samples(sample_i2c)
+    try:
+        left_ear_sample, right_ear_sample = retrieve_samples(sample_i2c)
 
-    #     while lock_left_sample_array.locked():
-    #         pass
-    #     left_sample_array.add_sample(left_ear_sample)
-
-    #     print(left_sample_array.get_ordered_array())  
+        while lock_left_sample_array.locked():
+            pass
+        left_sample_array.add_sample(left_ear_sample)
         
 
-    #     while lock_right_sample_array.locked():
-    #         pass
-    #     right_sample_array.add_sample(right_ear_sample)
+        while lock_right_sample_array.locked():
+            pass
+        right_sample_array.add_sample(right_ear_sample)
 
-    #     print(right_sample_array.get_ordered_array())
+    # Catch loss of I2C connection
+    except OSError as e:
+        from machine import Timer
 
-    # # Catch loss of I2C connection
-    # except OSError as e:
-    #     from machine import Timer
+        print("I2C connection to ATTiny Lost")
+        print(e)
 
-    #     print("I2C connection to ATTiny Lost")
+        # Reinitialize timer to attempt reconnection
+        sample_timer = Timer(0)
+        sample_timer.init(
 
-    #     # Reinitialize timer to attempt reconnection
-    #     sample_timer = Timer(0)
-    #     sample_timer.init(
-    #         period=ERROR_STATE_PERIOD_MS, 
-    #         mode=Timer.PERIODIC, 
-    #         callback=lambda t:reconnect_i2c(sample_i2c),
-    #     )
+            period=ERROR_STATE_PERIOD_MS, 
+            mode=Timer.PERIODIC, 
+            callback=lambda t:reconnect_i2c(sample_i2c),
+        )
+
     global sample_count
     sample_count = sample_count + 1
 
-    if sample_count > 14:
+    if sample_count > 100:
         sample_count = 0
+
+        global test_samp_idx
         
-        left_fft_module.calculate_fft()
-        right_fft_module.calculate_fft()
+        fft_trigger_event.set()
 
 
 

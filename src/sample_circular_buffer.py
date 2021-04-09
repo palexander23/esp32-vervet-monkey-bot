@@ -38,6 +38,12 @@ class SampleCircularBuffer:
         if self.array_index >= self.N:
             self.array_index = 0
 
+    
+    def get_most_recent_sample(self):
+        """Return the sample last entered into the array"""
+        
+        return self.circ_array[self.array_index - 1]
+
 
     def get_ordered_array(self):
         """Returns an array with the most recent sample first and oldest last.
@@ -57,6 +63,14 @@ class SampleCircularBuffer:
         self.temp_array[N-idx:N] = self.circ_array[0:idx]
 
         return self.temp_array
+
+    def get_unordered_array(self):
+        """Returns the circular buffer as is without ordering the samples correctly
+        Useful for implementing rolling averages where the order of the elements doesn't
+        matter.
+        """
+
+        return self.circ_array.copy()
 
 
 # Useful little test that run on hosted environment
