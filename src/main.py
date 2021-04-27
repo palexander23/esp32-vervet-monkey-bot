@@ -29,6 +29,7 @@ def main():
     from frequency_detection import left_fft_complete_event, right_fft_complete_event
     from frequency_detection import left_fft_outputs, right_fft_outputs
     from frequency_detection import fft_task, fft_trigger_event
+    from rgb_led import rgb_led_test
 
     try:
         machine.freq(240000000)
@@ -46,7 +47,7 @@ def main():
 
         # Load tasks onto event loop
         loop.create_task(heartbeat())
-        loop.create_task(motor_driver_test())
+        loop.create_task(rgb_led_test())
         loop.create_task(fft_task(fft_trigger_event))
         loop.create_task(fft_module_plotter(left_fft_complete_event, left_fft_outputs))
 

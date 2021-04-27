@@ -7,11 +7,11 @@ except ImportError:
     import asyncio as uasyncio
 
 # Pin Number definitions
-LEFT_IN1_NUM = 22
-LEFT_IN2_NUM = 4
+LEFT_IN1_NUM = 16
+LEFT_IN2_NUM = 17
 
-RIGHT_IN1_NUM = 16
-RIGHT_IN2_NUM = 17
+RIGHT_IN1_NUM = 22
+RIGHT_IN2_NUM = 4
 
 # PWM Parameters
 PWM_FREQ = 20000
