@@ -72,8 +72,10 @@ note_fft_blocks = np.array(np.around(note_frequency_array*((N/Fs)) - 1), dtype=n
 """Define a binary mask to select which bins correspond to useful frequencies"""
 fft_blocks_mask = np.zeros(N, dtype=np.uint8)
 
+# Testing showed that the mask needed to be sensitive to the bin above the id calculated
+# in note_fft_blocks
 for idx in note_fft_blocks:
-    fft_blocks_mask[idx] = 1
+    fft_blocks_mask[idx + 1] = 1
 
 
 if __name__ == "__main__":

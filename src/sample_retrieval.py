@@ -6,14 +6,13 @@ from frequency_detection import left_fft_module, right_fft_module
 from frequency_detection import left_sample_array, right_sample_array
 from frequency_detection import fft_trigger_event
 from frequency_detection import lock_left_sample_array, lock_right_sample_array
+from i2c_packet_interpreter import twiCall, ATTINY_I2C_ADDR
 
 import fft_data
 
-# I2C constants
-ATTINY_I2C_ADDR = const(10)
 
 # Sample Retrieval Timer Constants
-NORMAL_OPERATION_PERIOD_MS = 1
+NORMAL_OPERATION_PERIOD_MS = 50
 ERROR_STATE_PERIOD_MS = 500
 
 def initialize_sample_retrieval():
@@ -71,10 +70,6 @@ def add_test_samples():
         test_samp_idx = 0
         
 
-# Incremented every sample. 
-# When it reaches 15, the FFTs are engaged and it reset
-sample_count = 0
-
 def process_new_samples(sample_i2c):
 
     global left_sample_array
@@ -83,16 +78,16 @@ def process_new_samples(sample_i2c):
     # add_test_samples()
 
     try:
-        left_ear_sample, right_ear_sample = retrieve_samples(sample_i2c)
+        # Read bytes containing samples
+        left_ear_samples, right_ear_samples = twiCall(sample_i2c)
 
-        while lock_left_sample_array.locked():
-            pass
-        left_sample_array.add_sample(left_ear_sample)
-        
+        for l_samp, r_samp in zip(left_ear_samples, right_ear_samples):
+            left_sample_array.add_sample(l_samp)
+            right_sample_array.add_sample(r_samp)
 
-        while lock_right_sample_array.locked():
-            pass
-        right_sample_array.add_sample(right_ear_sample)
+        # Trigger fft 
+        fft_trigger_event.set()
+    
 
     # Catch loss of I2C connection
     except OSError as e:
@@ -109,30 +104,6 @@ def process_new_samples(sample_i2c):
             mode=Timer.PERIODIC, 
             callback=lambda t:reconnect_i2c(sample_i2c),
         )
-
-    global sample_count
-    sample_count = sample_count + 1
-
-    if sample_count > 100:
-        sample_count = 0
-
-        global test_samp_idx
-        
-        fft_trigger_event.set()
-
-
-
-def retrieve_samples(sample_i2c_bus):
-    """Read the most recent samples collected from the ATTiny via the I2C bus"""
-
-    # Read bytes containing samples
-    sample_bytes = sample_i2c_bus.readfrom(ATTINY_I2C_ADDR, 4)
-    
-    # Decode integer values from those bytes
-    left_ear_sample = int.from_bytes(sample_bytes[0:2], 'little')
-    right_ear_sample = int.from_bytes(sample_bytes[2:4], 'little')
-
-    return left_ear_sample, right_ear_sample
 
 
 def reconnect_i2c(sample_i2c):

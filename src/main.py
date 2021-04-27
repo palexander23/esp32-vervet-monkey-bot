@@ -25,7 +25,7 @@ def main():
     from sample_retrieval import initialize_sample_retrieval
     from motor_control import motor_driver_test
 
-    from frequency_detection import fft_module_test,
+    from frequency_detection import fft_module_plotter
     from frequency_detection import left_fft_complete_event, right_fft_complete_event
     from frequency_detection import left_fft_outputs, right_fft_outputs
     from frequency_detection import fft_task, fft_trigger_event
@@ -48,7 +48,7 @@ def main():
         loop.create_task(heartbeat())
         loop.create_task(motor_driver_test())
         loop.create_task(fft_task(fft_trigger_event))
-        loop.create_task(fft_module_test(left_fft_complete_event, left_fft_outputs))
+        loop.create_task(fft_module_plotter(left_fft_complete_event, left_fft_outputs))
 
         # Start Event loop
         # THIS FUNCTION SHOULD NEVER RETURN
