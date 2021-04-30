@@ -58,5 +58,5 @@ async def rgb_led_test():
         set_rgb_led(0, 0, 255)
         await uasyncio.sleep(1)
 
-        set_rgb_led(255, 191, 0)
+        set_rgb_led(255, 40, 0)
         await uasyncio.sleep(1)

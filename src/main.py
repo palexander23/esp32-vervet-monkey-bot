@@ -30,6 +30,7 @@ def main():
     from frequency_detection import left_fft_outputs, right_fft_outputs
     from frequency_detection import fft_task, fft_trigger_event
     from rgb_led import rgb_led_test
+    from application_code import application_code_manager
 
     try:
         machine.freq(240000000)
@@ -47,9 +48,8 @@ def main():
 
         # Load tasks onto event loop
         loop.create_task(heartbeat())
-        loop.create_task(rgb_led_test())
+        loop.create_task(application_code_manager(left_fft_complete_event, left_fft_outputs))
         loop.create_task(fft_task(fft_trigger_event))
-        loop.create_task(fft_module_plotter(left_fft_complete_event, left_fft_outputs))
 
         # Start Event loop
         # THIS FUNCTION SHOULD NEVER RETURN
@@ -61,9 +61,9 @@ def main():
         print("")
 
     except Exception as e:
-        print("")
-        print(e)
-        print("")
+        raise e
+
+        
 
     finally:
         # Stop the sample timer
