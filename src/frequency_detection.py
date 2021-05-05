@@ -1,98 +1,119 @@
-import uasyncio
+try:
+    import uasyncio
+    import utime
+    from ulab import numpy as np
 
-import utime
+except ImportError:
+    import asyncio as uasyncio
+    import time as utime
+    import numpy as np
 
-# @timed_function
-# Print time taken by a function call
-
-def timed_function(f, *args, **kwargs):
-    def new_func(*args, **kwargs):
-        t = utime.ticks_us()
-        result = f(*args, **kwargs)
-        delta = utime.ticks_diff(utime.ticks_us(), t) 
-        print('{:6.3f}'.format(delta/5), end=" ")
-        return result
-    return new_func
-
-
-def timed_function_print(f, *args, **kwargs):
-    def new_func(*args, **kwargs):
-        t = utime.ticks_us()
-        result = f(*args, **kwargs)
-        delta = utime.ticks_diff(utime.ticks_us(), t) 
-        print('Function {} is {:6.3f}ms'.format(f.__name__, delta/1000))
-        return result
-    return new_func
-
-
-async def waveform_generation_test():
-    from test_samples import test_samples
-
-    while True:
-        for idx, sample in enumerate(test_samples):
-            print(sample, idx)
-            await uasyncio.sleep(0.001)
+from fft_data import N
+from fft_module import FFTModule
+from fft_data import note_names
+from sample_circular_buffer import SampleCircularBuffer
 
 try:
-    from ulab import scipy as spy
+    from uasyncio import Lock
 except ImportError:
-    import scipy as spy
-
-@timed_function
-def run_fft(samples, hamming_window):
-    #samples = samples * hamming_window
-    return spy.signal.spectrogram(samples)
-
-from machine import ADC, Pin
-adc_pin = ADC(Pin(32))
-
-@timed_function_print
-def adc_read():
-    blob = adc_pin.read()
+    from asyncio import Lock 
 
 
-async def fft_test():
+# Define sample circular buffers 
+lock_left_sample_array = Lock()
+left_sample_array = SampleCircularBuffer(N)
 
-    from test_samples import test_samples
-    from hamming_window import hamming_window
+lock_right_sample_array = Lock()
+right_sample_array = SampleCircularBuffer(N)
 
-    # Index of array 
-    arr_idx = 0
+# Define FFT output dicts
+left_fft_outputs = dict(zip(note_names, np.zeros(len(note_names)))) 
+right_fft_outputs = dict(zip(note_names, np.zeros(len(note_names)))) 
 
-    # Number of samples
-    N = const(128)
+# Define output complete events
+left_fft_complete_event = uasyncio.Event()
+right_fft_complete_event = uasyncio.Event()
 
-    # Clear serial plotter
-    print(b'\x0c'[0])
+# FFT Time Event
+fft_trigger_event = uasyncio.ThreadSafeFlag()
 
-    # Setup a legend on arduino plotter
-    print("FFT_time Sample Array_Index Magnitude_200Hz Magnitude_400Hz")
+# Define FFT modules
+left_fft_module = FFTModule(
+    left_sample_array.get_ordered_array,
+    left_fft_outputs,
+    left_fft_complete_event,
+    _hamming=True
+)
 
-    adc_read()
+right_fft_module = FFTModule(
+    right_sample_array.get_ordered_array,
+    right_fft_outputs,
+    right_fft_complete_event,
+    _hamming=True
+)
 
-    while True:
 
-        # Get a new set of samples of length N to test
-        samples = test_samples[arr_idx:arr_idx+N:1]
+async def fft_task(event: uasyncio.Event):
+    """Async task that runs the FFTs when the given event fires"""
 
-        # Apply a hamming window to the samples
-        #samples = samples * hamming_window
+    global left_fft_module, right_fft_module
 
-        # Get the frequency spectrum of the samples
-        # spectrum = spy.signal.spectrogram(samples)
-        spectrum = run_fft(samples, hamming_window)
-
-        # Get the values of the bins for 200 Hz and 400 Hz
-        mag_200 = spectrum[50]
-        mag_400 = spectrum[101]
-
-        # Print the results
-        print(samples[-1]*10, arr_idx, mag_200, mag_400)
-
-        # Update the array index within the bounds of the test_samples array
-        arr_idx += 1
-
-        if arr_idx > len(test_samples):
-            arr_idx = 0
+    while(1):
         
-        await uasyncio.sleep(0.01)
+        # Wait for the FFT event to fire
+        await event.wait()
+
+        left_fft_module.calculate_fft()
+        right_fft_module.calculate_fft()
+
+
+async def fft_module_plotter(event: uasyncio.Event, fft_result_dict: dict):
+    """Wait for the completion event to fire and print a particular sample"""
+
+
+    avg_len = 10
+    
+    C3_array = SampleCircularBuffer(avg_len)
+    E3_array = SampleCircularBuffer(avg_len)
+    Fsh3_array = SampleCircularBuffer(avg_len)
+    A3_array = SampleCircularBuffer(avg_len)
+
+    C4_array = SampleCircularBuffer(avg_len)
+    E4_array = SampleCircularBuffer(avg_len)
+    Fsh4_array = SampleCircularBuffer(avg_len)
+    A4_array = SampleCircularBuffer(avg_len)
+
+    await uasyncio.sleep(2)
+    
+    print("C3", "E3", "Fsh3", "A3", "C4", "E4", "Fsh4", "A4",)
+
+    while(1):
+        # Wait for event to fire
+        await event.wait()
+
+        event.clear()
+
+        # Print a particular output
+        C3_array.add_sample(fft_result_dict["C3"])
+        E3_array.add_sample(fft_result_dict["E3"])
+        Fsh3_array.add_sample(fft_result_dict["Fsh3"])
+        A3_array.add_sample(fft_result_dict["A3"])
+
+        C4_array.add_sample(fft_result_dict["C4"])
+        E4_array.add_sample(fft_result_dict["E4"])
+        Fsh4_array.add_sample(fft_result_dict["Fsh4"])
+        A4_array.add_sample(fft_result_dict["A4"])
+
+
+        C3 = sum(C3_array.get_unordered_array()/avg_len)
+        E3 = sum(E3_array.get_unordered_array()/avg_len)
+        Fsh3 = sum(Fsh3_array.get_unordered_array()/avg_len)
+        A3 = sum(A3_array.get_unordered_array()/avg_len)
+
+        C4 = sum(C4_array.get_unordered_array()/avg_len)
+        E4 = sum(E4_array.get_unordered_array()/avg_len)
+        Fsh4 = sum(Fsh4_array.get_unordered_array()/avg_len)
+        A4 = sum(A4_array.get_unordered_array()/avg_len)
+
+        # Print Result
+        print("{} {} {} {} {} {} {} {}".format(C3, E3, Fsh3, A3, C4, E4, Fsh4, A4))
