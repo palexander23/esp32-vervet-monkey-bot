@@ -44,35 +44,37 @@ def update_state(C_counter, E_counter, Fsh_counter, A_counter):
 
     global system_state, system_task
 
+    enter_threshold = 10
+
     if system_state == STANDBY:
         if C_counter > 10:
             enter_new_state(WORKING, state_working)
 
 
     if system_state == WORKING:
-        if Fsh_counter > 10:
+        if Fsh_counter > enter_threshold:
             enter_new_state(DANGER, state_danger)
         
-        elif A_counter > 10:
+        elif A_counter > enter_threshold:
             enter_new_state(CAUTION, state_caution)
 
-        elif C_counter < 10:
+        elif C_counter < enter_threshold:
             enter_new_state(STANDBY, state_standby)
 
 
     if system_state == DANGER:
-        if Fsh_counter < 10:
+        if Fsh_counter < enter_threshold:
             enter_new_state(CAUTION, state_caution)
 
 
     if system_state == CAUTION:
-        if Fsh_counter > 10:
+        if Fsh_counter > enter_threshold:
             enter_new_state(DANGER, state_danger)
         
-        elif E_counter > 10:
+        elif E_counter > enter_threshold:
             enter_new_state(WORKING, state_working)
 
-        elif C_counter < 10:
+        elif C_counter < enter_threshold:
             enter_new_state(STANDBY, state_standby)
 
             
@@ -175,7 +177,7 @@ async def application_code_manager(event: uasyncio.Event, fft_result_dict: dict)
     counter_lower_lim = 0
 
     # Define the detection threshold for FFT outputs
-    detection_threshold = 500
+    detection_threshold = 800
 
     # Wait for the FFT to settle
     await uasyncio.sleep(2)
@@ -218,7 +220,7 @@ async def application_code_manager(event: uasyncio.Event, fft_result_dict: dict)
             C_counter = decrement_counter(C_counter, counter_lower_lim)
             
         # E3/E4
-        if E3 > detection_threshold or E4 > detection_threshold:
+        if E3 > detection_threshold or E4 > 350:
             E_counter = increment_counter(E_counter, counter_upper_lim)
         else:
             E_counter = decrement_counter(E_counter, counter_lower_lim)

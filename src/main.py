@@ -31,6 +31,7 @@ def main():
     from frequency_detection import fft_task, fft_trigger_event
     from rgb_led import rgb_led_test
     from application_code import application_code_manager
+    from speaker_control import stop_tone, random_sound_generator
 
     try:
         machine.freq(240000000)
@@ -50,6 +51,7 @@ def main():
         loop.create_task(heartbeat())
         loop.create_task(application_code_manager(left_fft_complete_event, left_fft_outputs))
         loop.create_task(fft_task(fft_trigger_event))
+        loop.create_task(random_sound_generator())
 
         # Start Event loop
         # THIS FUNCTION SHOULD NEVER RETURN
@@ -74,6 +76,9 @@ def main():
         # Stop the event loop if it has been defined
         if "loop" in locals():
             loop.stop() 
+
+        # Stop the speaker
+        stop_tone()
 
 
 if __name__ == "__main__":

@@ -10,6 +10,11 @@ from i2c_packet_interpreter import twiCall, ATTINY_I2C_ADDR
 
 import fft_data
 
+from machine import Timer, SoftI2C, Pin
+
+# I2C bus setup 
+sample_i2c = SoftI2C(sda=Pin(19), scl=Pin(18), freq=1000000)
+
 
 # Sample Retrieval Timer Constants
 NORMAL_OPERATION_PERIOD_MS = 50
@@ -17,17 +22,11 @@ ERROR_STATE_PERIOD_MS = 500
 
 def initialize_sample_retrieval():
     """Setup timer and I2C bus for retrieving samples from the ATTiny"""
-    
-    from machine import Timer, SoftI2C, Pin
-
-    # I2C bus setup 
-    sample_i2c = SoftI2C(sda=Pin(19), scl=Pin(18), freq=1000000)
 
     # Check whether the ATTiny is available over I2C
     # Only start the sample retrieval system if it is
     available_i2c_addresses = sample_i2c.scan()
     if ATTINY_I2C_ADDR in available_i2c_addresses:
-    # if True:
         
         print("ATTiny Found!")
         from machine import Timer
