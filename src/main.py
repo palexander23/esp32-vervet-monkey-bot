@@ -31,7 +31,7 @@ def main():
     from frequency_detection import fft_task, fft_trigger_event
     from rgb_led import rgb_led_test
     from application_code import application_code_manager
-    from speaker_control import stop_tone, random_sound_generator
+    import speaker_control
 
     try:
         machine.freq(240000000)
@@ -47,11 +47,12 @@ def main():
         lpf_clk = machine.Pin(15)
         lpf_clk_pwm = machine.PWM(lpf_clk, freq=50000, duty=512)
 
+
         # Load tasks onto event loop
         loop.create_task(heartbeat())
         loop.create_task(application_code_manager(left_fft_complete_event, left_fft_outputs))
         loop.create_task(fft_task(fft_trigger_event))
-        loop.create_task(random_sound_generator())
+        loop.create_task(speaker_control.random_sound_generator())
 
         # Start Event loop
         # THIS FUNCTION SHOULD NEVER RETURN
@@ -66,7 +67,7 @@ def main():
         raise e
 
         
-
+        
     finally:
         # Stop the sample timer
         from machine import Timer
@@ -78,7 +79,7 @@ def main():
             loop.stop() 
 
         # Stop the speaker
-        stop_tone()
+        speaker_control.stop_tone()
 
 
 if __name__ == "__main__":

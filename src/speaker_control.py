@@ -89,42 +89,44 @@ async def random_sound_generator():
     check_delay_s = 0.5
     random_num_range = range(1, 20)
 
-    note_length_range = range(2, 6)
+    note_length_range = range(4, 8)
     silence_length_range = range(2, 6)
 
     a_num = 1
     fsh_num = 2
 
-    await uasyncio.sleep(3)
+    try:
+        while 1:
+            await uasyncio.sleep(check_delay_s)
 
-    while 1:
-        await uasyncio.sleep(check_delay_s)
+            # Get a random number
+            rand = random.choice(random_num_range)
 
-        # Get a random number
-        rand = random.choice(random_num_range)
+            # If its a meaningless number wait a bit then pick another
+            if rand not in [a_num, fsh_num]:
+                continue
+            
+            # If its a good number play the appropriate note
+            if rand == a_num:
+                start_A_tone()
+            elif rand == fsh_num:
+                start_Fsh_tone()    
+            
+            # Let the note play for a set amount of time
+            await uasyncio.sleep(random.choice(note_length_range))
 
-        # If its a meaningless number wait a bit then pick another
-        if rand not in [a_num, fsh_num]:
-            continue
-        
-        # If its a good number play the appropriate note
-        if rand == a_num:
-            start_A_tone()
-        elif rand == fsh_num:
-            start_Fsh_tone()    
-        
-        # Let the note play for a set amount of time
-        await uasyncio.sleep(random.choice(note_length_range))
+            # Stop the note and let silence play out for a bit
+            stop_tone()
+            await uasyncio.sleep(random.choice(silence_length_range))
 
-        # Stop the note and let silence play out for a bit
+            # Play the E note for a bit then repeat
+            start_E_tone()
+            await uasyncio.sleep(4)
+            stop_tone()
+
+            await uasyncio.sleep(5)
+    
+    except uasyncio.CancelledError as e:
         stop_tone()
-        await uasyncio.sleep(random.choice(silence_length_range))
-
-        # Play the E note for a bit then repeat
-        start_E_tone()
-        await uasyncio.sleep(4)
-        stop_tone()
-
-        await uasyncio.sleep(5)
 
         

@@ -36,11 +36,11 @@ $(UPLOAD_TOKEN_DIR)%.py_uploaded: $(SRC_DIR)%.py
 	echo Created > $@
 
 clean:
-	make clear-tokens
 	-$(foreach file, $(BOARD_FILES), $(AMPY) $(AMPY_ARGS) rm $(file) $(newline))
+	-make clear-tokens
 
 clear-tokens:
-	cd $(UPLOAD_TOKEN_DIR)
+	-cd $(UPLOAD_TOKEN_DIR)
 	-del /S /Q *.py_uploaded
 
 

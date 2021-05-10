@@ -1,6 +1,5 @@
 
 from sample_circular_buffer import SampleCircularBuffer
-from test_samples import test_samples
 
 from frequency_detection import left_fft_module, right_fft_module
 from frequency_detection import left_sample_array, right_sample_array
@@ -55,26 +54,11 @@ def initialize_sample_retrieval():
 
 test_samp_idx = 0
 
-def add_test_samples():
-    global test_samp_idx
-    
-    new_sample = test_samples[test_samp_idx]
-
-    left_sample_array.add_sample(new_sample)
-    right_sample_array.add_sample(new_sample)
-
-    test_samp_idx = test_samp_idx + 1
-
-    if test_samp_idx > len(test_samples) - 1:
-        test_samp_idx = 0
-        
 
 def process_new_samples(sample_i2c):
 
     global left_sample_array
     global right_sample_array
-
-    # add_test_samples()
 
     try:
         # Read bytes containing samples
