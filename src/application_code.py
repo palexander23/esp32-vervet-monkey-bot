@@ -258,5 +258,5 @@ async def application_code_manager(event: uasyncio.Event, l_fft_result_dict: dic
         update_state(C_counter, E_counter, Fsh_counter, A_counter)
 
         # Print Frequency details
-        print("{} {} {} {} {} {} {} {} {} {} {} {} {} {} {}".format(C3, E3, Fsh3, A3, C4, E4, Fsh4, A4, C_counter*500, E_counter*500, Fsh_counter*500, A_counter*500,A_counter*500, C4D))
+        print("{} {} {} {} {} {} {} {} {} {} {} {} {} {}".format(C3, E3, Fsh3, A3, C4, E4, Fsh4, A4, C_counter*500, E_counter*500, Fsh_counter*500, A_counter*500,A_counter*500, C4D))
 

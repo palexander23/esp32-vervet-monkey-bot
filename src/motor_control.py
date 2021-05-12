@@ -27,7 +27,7 @@ status_led = Pin(2, Pin.OUT)
 # Definitions for Motor Speed
 MAX_SPEED = 1023
 SLOW_SPEED = int(0.75 * MAX_SPEED)
-FAST_SPEED = int(0.90 * MAX_SPEED) 
+FAST_SPEED = int(0.75 * MAX_SPEED) 
 
 # Flag to tell whether the robot is moving
 robot_moving = uasyncio.Event()
