@@ -41,6 +41,7 @@ def twiCall(i2c: SoftI2C):
                 else:
                     if(i % 2 == 0):
                         left_samples.append(sample)
+                    else:
                         right_samples.append(sample)
                     
 
