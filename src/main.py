@@ -50,7 +50,7 @@ def main():
 
         # Load tasks onto event loop
         loop.create_task(heartbeat())
-        loop.create_task(application_code_manager(left_fft_complete_event, left_fft_outputs))
+        loop.create_task(application_code_manager(left_fft_complete_event, left_fft_outputs, right_fft_outputs))
         loop.create_task(fft_task(fft_trigger_event))
         loop.create_task(speaker_control.random_sound_generator())
 
