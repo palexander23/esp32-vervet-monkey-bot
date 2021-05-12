@@ -1,6 +1,5 @@
 
 from sample_circular_buffer import SampleCircularBuffer
-from test_samples import test_samples
 
 from frequency_detection import left_fft_module, right_fft_module
 from frequency_detection import left_sample_array, right_sample_array
@@ -10,6 +9,11 @@ from i2c_packet_interpreter import twiCall, ATTINY_I2C_ADDR
 
 import fft_data
 
+from machine import Timer, SoftI2C, Pin
+
+# I2C bus setup 
+sample_i2c = SoftI2C(sda=Pin(19), scl=Pin(18), freq=1000000)
+
 
 # Sample Retrieval Timer Constants
 NORMAL_OPERATION_PERIOD_MS = 50
@@ -17,17 +21,11 @@ ERROR_STATE_PERIOD_MS = 500
 
 def initialize_sample_retrieval():
     """Setup timer and I2C bus for retrieving samples from the ATTiny"""
-    
-    from machine import Timer, SoftI2C, Pin
-
-    # I2C bus setup 
-    sample_i2c = SoftI2C(sda=Pin(19), scl=Pin(18), freq=1000000)
 
     # Check whether the ATTiny is available over I2C
     # Only start the sample retrieval system if it is
     available_i2c_addresses = sample_i2c.scan()
     if ATTINY_I2C_ADDR in available_i2c_addresses:
-    # if True:
         
         print("ATTiny Found!")
         from machine import Timer
@@ -56,26 +54,11 @@ def initialize_sample_retrieval():
 
 test_samp_idx = 0
 
-def add_test_samples():
-    global test_samp_idx
-    
-    new_sample = test_samples[test_samp_idx]
-
-    left_sample_array.add_sample(new_sample)
-    right_sample_array.add_sample(new_sample)
-
-    test_samp_idx = test_samp_idx + 1
-
-    if test_samp_idx > len(test_samples) - 1:
-        test_samp_idx = 0
-        
 
 def process_new_samples(sample_i2c):
 
     global left_sample_array
     global right_sample_array
-
-    # add_test_samples()
 
     try:
         # Read bytes containing samples

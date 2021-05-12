@@ -8,6 +8,8 @@ except ImportError:
 from fft_data import Fs
 from sample_circular_buffer import SampleCircularBuffer
 from rgb_led import set_rgb_led, set_rgb_led_off
+from motor_control import random_movement_task, FAST_SPEED, SLOW_SPEED, robot_moving
+from speaker_control import random_sound_generator
 
 # Define States
 STANDBY = const(0)
@@ -47,6 +49,9 @@ def update_state(C_counter, E_counter, Fsh_counter, A_counter):
     if system_state == STANDBY:
         if C_counter > 10:
             enter_new_state(WORKING, state_working)
+            
+        if Fsh_counter > 10:
+            enter_new_state(DANGER, state_danger)
 
 
     if system_state == WORKING:
@@ -105,12 +110,13 @@ async def state_working():
 
     try:
         set_rgb_led(0, 255, 0)
+        move_task = system_event_loop.create_task(random_movement_task(FAST_SPEED))
 
         while(1):
             await uasyncio.sleep(50)
 
     except CancelledError:
-        pass
+        move_task.cancel()
 
 async def state_danger():
     """Waiting hold the RGBLED green and move around"""
@@ -132,17 +138,19 @@ async def state_caution():
 
     try:
         set_rgb_led(255, 40, 0)
+        move_task = system_event_loop.create_task(random_movement_task(SLOW_SPEED))
 
         while(1):
             await uasyncio.sleep(50)
 
     except CancelledError:
+        move_task.cancel()
         pass
 
 async def application_code_manager(event: uasyncio.Event, fft_result_dict: dict):
     """Wait for the completion event to fire and print a particular sample"""
 
-    global system_state, system_task
+    global system_state, system_task, robot_moving
 
     # Start standby task
     system_task = system_event_loop.create_task(state_standby())
@@ -175,7 +183,7 @@ async def application_code_manager(event: uasyncio.Event, fft_result_dict: dict)
     counter_lower_lim = 0
 
     # Define the detection threshold for FFT outputs
-    detection_threshold = 500
+    detection_threshold = 1000
 
     # Wait for the FFT to settle
     await uasyncio.sleep(2)
@@ -186,7 +194,12 @@ async def application_code_manager(event: uasyncio.Event, fft_result_dict: dict)
         # Wait for event to fire
         await event.wait()
 
+
         event.clear()
+
+        if robot_moving: 
+            await uasyncio.sleep(1)
+            continue
 
         # Add FFT results to rolling average
         C3_array.add_sample(fft_result_dict["C3"])
@@ -238,5 +251,5 @@ async def application_code_manager(event: uasyncio.Event, fft_result_dict: dict)
         update_state(C_counter, E_counter, Fsh_counter, A_counter)
 
         # Print Frequency details
-        print("{} {} {} {} {} {} {} {}".format(C3, E3, Fsh3, A3, C4, E4, Fsh4, A4))
+        print("{} {} {} {} {} {} {} {} {} {} {} {}".format(C3, E3, Fsh3, A3, C4, E4, Fsh4, A4, C_counter*500, E_counter*500, Fsh_counter, A_counter*500))
 

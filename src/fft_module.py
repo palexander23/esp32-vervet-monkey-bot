@@ -46,7 +46,6 @@ class FFTModule:
             sample_arr = sample_arr * hamming_window
 
         # Get the frequency spectrum of the samples
-        # spectrum = spy.signal.spectrogram(samples)
         spectrum = spy.signal.spectrogram(sample_arr)
 
         # Extract the bins corresponding to note frequencies from the samples
