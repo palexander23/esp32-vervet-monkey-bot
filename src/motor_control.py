@@ -30,12 +30,15 @@ SLOW_SPEED = int(0.75 * MAX_SPEED)
 FAST_SPEED = int(0.90 * MAX_SPEED) 
 
 # Flag to tell whether the robot is moving
-robot_moving = False
+robot_moving = uasyncio.Event()
+robot_moving.clear()
 
 def motor_standby():
     """Reset all motor inputs"""
 
-    robot_moving = False
+    global robot_moving
+
+    robot_moving.clear()
 
     LEFT_IN1_PWM.duty(0)
     RIGHT_IN1_PWM.duty(0)
@@ -47,7 +50,7 @@ async def move_forwards(speed, duration):
     """Moves the robot forward for time given in duration"""
     global robot_moving
 
-    robot_moving = True
+    robot_moving.set()
         
     # Set motor inputs
     LEFT_IN1_PWM.duty(speed)
@@ -64,7 +67,7 @@ async def move_backwards(speed, duration):
     """Moves the robot backwards for time given in duration"""
     global robot_moving
 
-    robot_moving = True
+    robot_moving.set()
         
     # Set motor inputs
     LEFT_IN2_PWM.duty(speed)
@@ -81,7 +84,7 @@ async def turn_left(speed, duration):
     """Turns the robot to left for time given in duration"""
     global robot_moving
 
-    robot_moving = True
+    robot_moving.set()
         
     # Set motor inputs
     LEFT_IN2_PWM.duty(speed)
@@ -98,7 +101,7 @@ async def turn_right(speed, duration):
     """Turns the robot to right for time given in duration"""
     global robot_moving
 
-    robot_moving = True
+    robot_moving.set()
         
     # Set motor inputs
     LEFT_IN1_PWM.duty(speed)

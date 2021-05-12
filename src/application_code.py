@@ -147,7 +147,7 @@ async def state_caution():
         move_task.cancel()
         pass
 
-async def application_code_manager(event: uasyncio.Event, fft_result_dict: dict):
+async def application_code_manager(event: uasyncio.Event, l_fft_result_dict: dict, r_fft_result_dict):
     """Wait for the completion event to fire and print a particular sample"""
 
     global system_state, system_task, robot_moving
@@ -168,6 +168,9 @@ async def application_code_manager(event: uasyncio.Event, fft_result_dict: dict)
     Fsh4_array = SampleCircularBuffer(avg_len)
     A4_array = SampleCircularBuffer(avg_len)
 
+    # Set up buffer for directional mic
+    C4D_array = SampleCircularBuffer(avg_len)
+
     # Set up counters for detected notes.
     # For every sample a note is detected add 1.
     # For every sample a note is not detected subtract 1.
@@ -183,12 +186,12 @@ async def application_code_manager(event: uasyncio.Event, fft_result_dict: dict)
     counter_lower_lim = 0
 
     # Define the detection threshold for FFT outputs
-    detection_threshold = 1000
+    detection_threshold = 500
 
     # Wait for the FFT to settle
     await uasyncio.sleep(2)
 
-    print("C3", "E3", "Fsh3", "A3", "C4", "E4", "Fsh4", "A4",)
+    print("C3", "E3", "Fsh3", "A3", "C4", "E4", "Fsh4", "A4", "C_Counter", "E_Counter", "Fsh_Counter", "A_Counter", "C4_Directional_Mic")
 
     while(1):
         # Wait for event to fire
@@ -197,31 +200,35 @@ async def application_code_manager(event: uasyncio.Event, fft_result_dict: dict)
 
         event.clear()
 
-        if robot_moving: 
+        if robot_moving.is_set(): 
             await uasyncio.sleep(1)
             continue
 
         # Add FFT results to rolling average
-        C3_array.add_sample(fft_result_dict["C3"])
-        E3_array.add_sample(fft_result_dict["E3"])
-        Fsh3_array.add_sample(fft_result_dict["Fsh3"])
-        A3_array.add_sample(fft_result_dict["A3"])
+        C3_array.add_sample(l_fft_result_dict["C3"])
+        E3_array.add_sample(l_fft_result_dict["E3"])
+        Fsh3_array.add_sample(l_fft_result_dict["Fsh3"])
+        A3_array.add_sample(l_fft_result_dict["A3"])
 
-        C4_array.add_sample(fft_result_dict["C4"])
-        E4_array.add_sample(fft_result_dict["E4"])
-        Fsh4_array.add_sample(fft_result_dict["Fsh4"])
-        A4_array.add_sample(fft_result_dict["A4"])
+        C4_array.add_sample(l_fft_result_dict["C4"])
+        E4_array.add_sample(l_fft_result_dict["E4"])
+        Fsh4_array.add_sample(l_fft_result_dict["Fsh4"])
+        A4_array.add_sample(l_fft_result_dict["A4"])
+
+        C4D_array.add_sample(r_fft_result_dict["C4"])
 
 
-        C3 = sum(C3_array.get_unordered_array()/avg_len)
-        E3 = sum(E3_array.get_unordered_array()/avg_len)
-        Fsh3 = sum(Fsh3_array.get_unordered_array()/avg_len)
-        A3 = sum(A3_array.get_unordered_array()/avg_len)
+        C3 = sum(C3_array.get_unordered_array())/avg_len
+        E3 = sum(E3_array.get_unordered_array())/avg_len
+        Fsh3 = sum(Fsh3_array.get_unordered_array())/avg_len
+        A3 = sum(A3_array.get_unordered_array())/avg_len
 
-        C4 = sum(C4_array.get_unordered_array()/avg_len)
-        E4 = sum(E4_array.get_unordered_array()/avg_len)
-        Fsh4 = sum(Fsh4_array.get_unordered_array()/avg_len)
-        A4 = sum(A4_array.get_unordered_array()/avg_len)
+        C4 = sum(C4_array.get_unordered_array())/avg_len
+        E4 = sum(E4_array.get_unordered_array())/avg_len
+        Fsh4 = sum(Fsh4_array.get_unordered_array())/avg_len
+        A4 = sum(A4_array.get_unordered_array())/avg_len
+
+        C4D = sum(C4D_array.get_unordered_array())/avg_len
 
         # Update counters
         # C3/C4
@@ -251,5 +258,5 @@ async def application_code_manager(event: uasyncio.Event, fft_result_dict: dict)
         update_state(C_counter, E_counter, Fsh_counter, A_counter)
 
         # Print Frequency details
-        print("{} {} {} {} {} {} {} {} {} {} {} {}".format(C3, E3, Fsh3, A3, C4, E4, Fsh4, A4, C_counter*500, E_counter*500, Fsh_counter, A_counter*500))
+        print("{} {} {} {} {} {} {} {} {} {} {} {} {} {} {}".format(C3, E3, Fsh3, A3, C4, E4, Fsh4, A4, C_counter*500, E_counter*500, Fsh_counter*500, A_counter*500,A_counter*500, C4D))
 
