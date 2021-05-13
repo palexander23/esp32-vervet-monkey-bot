@@ -238,7 +238,7 @@ async def application_code_manager(event: uasyncio.Event, l_fft_result_dict: dic
             C_counter = decrement_counter(C_counter, counter_lower_lim)
             
         # E3/E4
-        if E3 > detection_threshold or E4 > detection_threshold:
+        if E3 > 300 or E4 > 300:
             E_counter = increment_counter(E_counter, counter_upper_lim)
         else:
             E_counter = decrement_counter(E_counter, counter_lower_lim)
@@ -258,5 +258,5 @@ async def application_code_manager(event: uasyncio.Event, l_fft_result_dict: dic
         update_state(C_counter, E_counter, Fsh_counter, A_counter)
 
         # Print Frequency details
-        print("{} {} {} {} {} {} {} {} {} {} {} {} {} {} {}".format(C3, E3, Fsh3, A3, C4, E4, Fsh4, A4, C_counter*500, E_counter*500, Fsh_counter*500, A_counter*500,A_counter*500, C4D))
+        print("{} {} {} {} {} {} {} {} {} {} {} {} {} {}".format(C3, E3, Fsh3, A3, C4, E4, Fsh4, A4, C_counter*500, E_counter*500, Fsh_counter*500, A_counter*500,A_counter*500, C4D))
 

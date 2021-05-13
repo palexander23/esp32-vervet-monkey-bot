@@ -90,6 +90,7 @@ async def random_sound_generator():
     random_num_range = range(1, 20)
 
     note_length_range = range(4, 8)
+    e_length_range = range(6, 8)
     silence_length_range = range(2, 6)
 
     a_num = 1
