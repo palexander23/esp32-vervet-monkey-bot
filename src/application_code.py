@@ -238,7 +238,7 @@ async def application_code_manager(event: uasyncio.Event, l_fft_result_dict: dic
             C_counter = decrement_counter(C_counter, counter_lower_lim)
             
         # E3/E4
-        if E3 > detection_threshold or E4 > detection_threshold:
+        if E3 > 300 or E4 > 300:
             E_counter = increment_counter(E_counter, counter_upper_lim)
         else:
             E_counter = decrement_counter(E_counter, counter_lower_lim)
