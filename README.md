@@ -11,6 +11,10 @@ Page 9 of the [Report](Report.pdf) shows the circuits I designed.
 I was also in charge of designing the musical tones used in the communication scheme.
 This and other work I did for the project is shows on pages 13-15 of the [Report](Report.pdf)
 
+**Disclaimer:** This project has been made public purely for the purposes of creating a portfolio. 
+If you are currently a student and Southampton do not attempt to submit some or all of this project as your own work. 
+It will be flagged as plagiarism and there will be serious consequences.
+
 ## Software Requirements
 * make
 * python3.x
