@@ -1,4 +1,15 @@
-# ESP32 Robot Software
+# ESP32 Vervet Monkey Bot 
+
+This repo contains the MicroPython firmware for a robot that varies its behaviour based on the musical tones it can hear in its surroundings.
+This project was completed to investigate methods of communication for swarm robots that can be intuitively be interpreted by humans.
+Further information can be found in the [Project Report](Report.pdf).
+
+This project forms part of the work submitted for a group project to produce a biologically inspired robot for the award of an MEng in Electronics with Computer Systems during my 4th year at the University of Southampton.
+I was tasked with designing the frequency detection hardware and firmware for the robot. 
+This repo contains the firmware.
+Page 9 of the [Report](Report.pdf) shows the circuits I designed. 
+I was also in charge of designing the musical tones used in the communication scheme.
+This and other work I did for the project is shows on pages 13-15 of the [Report](Report.pdf)
 
 ## Software Requirements
 * make
