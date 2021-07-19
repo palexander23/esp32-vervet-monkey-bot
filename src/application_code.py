@@ -148,7 +148,24 @@ async def state_caution():
         pass
 
 async def application_code_manager(event: uasyncio.Event, l_fft_result_dict: dict, r_fft_result_dict):
-    """Wait for the completion event to fire and print a particular sample"""
+    """This is the central function for the application code.
+    It uses the frequency data calculated by the FFT modules to
+    determine behaviour of the motors and RGB LED.
+
+    The function uasyncio.Event object passed as an argument triggers
+    to indicate a new batch of frequency data is ready.
+    The frequency data is separated into notes and placed into 
+    the corresponding circular buffers used to perform a running
+    average.
+
+    If the average of a particular note is above a certain threshold 
+    a token corresponding to that note is incremented. If it is below
+    it is decremented.
+    These counters are bounded to between 0 and 20. The value of 
+    these counters are used as the inputs to a finite state machine.
+    Above a certain threshold gives that state machine input a 1,
+    below a certain threshold gives that state machine input a 0.
+    """
 
     global system_state, system_task, robot_moving
 
